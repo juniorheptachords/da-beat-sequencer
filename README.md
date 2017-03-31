@@ -1,7 +1,7 @@
 # Da Beat Sequencer
 Easy to use Audio / Midi beat sequencer.
 
-Still in development, works only in chrome but planned to be working on all browsers.
+Still in development, tested in Chrome and Safari, planned to be working on all browsers.
 
 ## How to use
 Include the 2 files da-beat-sequecer.js and da-beat-sequencer.css and instantiate the sequencer like this:
@@ -25,8 +25,8 @@ Create inputs to control the sequencer.
 __Default: true__
 
 ### samplesSet
-Array of samples in base64 strings for the audio mode.
-__Default: array of 4 samples__
+Array of audio samples urls for the audio mode.
+__Default: empty array__
 		
 ### sendMidi
 Send midi notes to a midi port. Currently the midi port is not configurable.
@@ -60,12 +60,10 @@ __Default: 110__
 	
 ### steps
 2D array representing the steps.
-__Default:  [
-			[1,1,0,1,0,0,1,1,0,1,1,0,0,0,0,0],
+__Default: [[1,1,0,1,0,0,1,1,0,1,1,0,0,0,0,0],
 			[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
 			[1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,1],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]
-			]__
+			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]] __
 
 ### midiNotes
 Array of midi notes used when sending midi. The order in the array is related to the array of steps.
