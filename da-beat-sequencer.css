@@ -19,8 +19,23 @@
 }
 .da-beat-sequencer .bpm-control-wrapper label{
 	display: inline-block;
+    vertical-align: bottom;
 }
 .da-beat-sequencer .bpm-control-wrapper label input,
 .da-beat-sequencer .bpm-control-wrapper label select{
 	display: block;
+}
+.da-beat-sequencer .instrument label{
+	display: inline-block;
+	vertical-align: middle;
+	width: 19%;
+}
+.da-beat-sequencer .instrument label input{
+	display: block;
+	width: 100%;
+}
+.da-beat-sequencer .instrument .steps{
+	display: inline-block;
+	vertical-align: middle;
+	width: 80%;
 }

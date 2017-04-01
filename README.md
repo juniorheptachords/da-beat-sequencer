@@ -29,7 +29,7 @@ Array of audio samples urls for the audio mode.
 __Default: empty array__
 		
 ### sendMidi
-Send midi notes to a midi port. Currently the midi port is not configurable.
+Send midi notes to a midi port. Will active some inputs to configure Midi.
 __Default: false__
 
 ### playSound
@@ -55,15 +55,17 @@ Number of steps in each bar. Some work to do still.
 __Default: 16__	
 
 ### bpm
-The bpm obviously.
+The bpm obviously. 
 __Default: 110__	
 	
 ### steps
 2D array representing the steps.
-__Default: [[1,1,0,1,0,0,1,1,0,1,1,0,0,0,0,0],
-			[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
-			[1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,1],
-			[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]] __
+__Default: __
+```javascript
+[[1,1,0,1,0,0,1,1,0,1,1,0,0,0,0,0],
+[0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
+[1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,1],
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]]```
 
 ### midiNotes
 Array of midi notes used when sending midi. The order in the array is related to the array of steps.
@@ -72,9 +74,7 @@ __Default: [36, 38, 42, 43] __
 
 ## To do
 - Make it work on all browser!
-- Allow configuration of the midi port
 - Allow more bars to be defined
-- Load samples from files in addition of base64
 - Allow more flexibility on customization/override 
 - Make some more css
 ...

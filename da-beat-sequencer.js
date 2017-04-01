@@ -7,7 +7,7 @@
 ██████╔╝██║  ██║    ██████╔╝███████╗██║  ██║   ██║       ███████║███████╗╚██████╔╝╚██████╔╝███████╗██║ ╚████║╚██████╗███████╗██║  ██║
 ╚═════╝ ╚═╝  ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝
                                                                                                                                      
-version : 0.3
+version : 0.4
 Release date : 2017-03-31
 
 MIT License
@@ -259,7 +259,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		}.bind(this);
 		
 		// Initialize the controls
-		// TODO : Ajouter un label sur chaque input
 		var initControls = function(){
 			this.controlsWrapper = document.createElement("DIV");
 			this.controlsWrapper.className = "bpm-control-wrapper";
@@ -339,9 +338,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		
 		
 		// Initialize the grid
-		// TODO : Ajouter un input pour la note midi de chaque instrument
 		// TODO : ajouter la possibilité de cliquer sur chaque case pour l'activer / désactiver
 		var initGrid = function(){
+			var self = this;
 			this.gridElement = document.createElement("DIV");
 			this.gridElement.className = "grid";
 				
@@ -349,7 +348,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 				
 				var line = document.createElement("DIV");
 				line.className = "instrument";
+				this.gridElement.appendChild(line); 
+				
+				var steps = document.createElement("DIV");
+				steps.className = "steps";
+				
+				// Midi note input with label
+				if(this.options.sendMidi){
+					labelMidiNote = document.createElement("LABEL");
+					labelMidiNote.innerHTML = "Midi note";
+					line.appendChild(labelMidiNote); 
 					
+					midiNoteControl = document.createElement("INPUT");
+					midiNoteControl.setAttribute("type", "number");
+					midiNoteControl.setAttribute("value", this.options.midiNotes[i]);
+					labelMidiNote.appendChild(midiNoteControl);
+					
+					(function(i, midiNoteControl) {
+						midiNoteControl.addEventListener('change', function(){self.options.midiNotes[i] = Number(midiNoteControl.value) }.bind(self));
+					})(i, midiNoteControl);
+				}
+				
+				// Create the visual representation of the steps 
 				for(var s = 0; s<this.options.steps[i].length; s++){
 					var block = document.createElement("DIV");
 					block.className = "step";
@@ -360,11 +380,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 						t = document.createTextNode(".");
 					}
 					block.appendChild(t);
-					line.appendChild(block);  
+					steps.appendChild(block);  
 					
 					//block.addEventListener('click', this.close.bind(this)); 
 				}
-				this.gridElement.appendChild(line); 
+				line.appendChild(steps); 
 			}
 			
 			this.sequencerContainer.appendChild(this.gridElement); 
@@ -374,10 +394,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		var updateVisual = function(currentStep){
 			if(this.gridElement){
 				for(var i = 0; i<this.gridElement.childNodes.length; i++){
-					for(var s = 0; s<this.gridElement.childNodes[i].childNodes.length; s++){
+					
+					var instrumentWrapper = this.gridElement.childNodes[i];
+					var stepsWrapper = instrumentWrapper.getElementsByClassName("steps")[0];
+				
+					for(var s = 0; s<stepsWrapper.childNodes.length; s++){
 						
 						// Remove the active class on all elements
-						stepElement = this.gridElement.childNodes[i].childNodes[s];
+						stepElement = stepsWrapper.childNodes[s];
 						stepElement.classList.remove("active");
 						
 						// Maybe the steps have changed so we rewrite each to be sure
@@ -391,7 +415,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 				
 				// Add the active class on current elements
 				for(var i = 0; i<this.gridElement.childNodes.length; i++){
-					currentStepElement = this.gridElement.childNodes[i].childNodes[currentStep];
+					
+					var instrumentWrapper = this.gridElement.childNodes[i];
+					var stepsWrapper = instrumentWrapper.getElementsByClassName("steps")[0];
+					
+					currentStepElement = stepsWrapper.childNodes[currentStep];
 					currentStepElement.classList.add("active");
 				}
 			}
