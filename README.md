@@ -55,8 +55,8 @@ Number of steps in each bar. Some work to do still.
 __Default: 16__	
 
 ### bpm
-The bpm obviously. 
-__Default: 110__	
+The bpm obviously.  
+__Default: 110__
 	
 ### steps
 2D array representing the steps.
@@ -69,8 +69,11 @@ __Default:__
 ```
 
 ### midiNotes
-Array of midi notes used when sending midi. The order in the array is related to the array of steps.
-__Default: [36, 38, 42, 43] __
+Array of midi notes used when sending midi. The order in the array is related to the array of steps.  
+__Default:__
+```javascript
+ [36, 38, 42, 43]
+```
 
 
 ## To do
