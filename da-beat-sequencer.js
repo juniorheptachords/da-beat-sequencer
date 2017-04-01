@@ -7,8 +7,8 @@
 ██████╔╝██║  ██║    ██████╔╝███████╗██║  ██║   ██║       ███████║███████╗╚██████╔╝╚██████╔╝███████╗██║ ╚████║╚██████╗███████╗██║  ██║
 ╚═════╝ ╚═╝  ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝
                                                                                                                                      
-version : 0.2
-Release date : 2017-03-30
+version : 0.3
+Release date : 2017-03-31
 
 MIT License
 
@@ -61,6 +61,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		
 		this.midi = null;
 		this.options = defaults;
+		this.midiOutputs = new Array();
+		this.selectedMidiOutput = 0;
 		
 		// Create this.options by extending defaults with the passed in arugments
 		if (arguments[0] && typeof arguments[0] === "object") {
@@ -190,6 +192,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		}.bind(this);
 		
 		// Init MIDI
+		// TODO : ajouter le mode esclave et le mode maitre du tempo
 		var initMidi = function () {
 			if (navigator.requestMIDIAccess) {
 			    navigator.requestMIDIAccess()
@@ -197,11 +200,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 			}
 		}.bind(this);
 		
-		// MIDI succss
+		// MIDI success
 		var onMIDISuccess = function ( midiAccess ) {
 			console.log( "MIDI ready!" );
 			this.midi = midiAccess;  // store in the global (in real usage, would probably keep in an object instance)
+			
 			listInputsAndOutputs( midiAccess );
+			
+			//Initialize the Midi output selector
+			initMidiOutputControl();	
 		}.bind(this);
 		
 		// MIDI Failure
@@ -215,7 +222,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 				var outputs = this.midi.outputs.values();
 				for (var output = outputs.next(); output && !output.done; output = outputs.next()) {
 				    // each time there is a midi message call the onMIDIMessage function
-				    this.midiOutput = output.value;
+				    this.midiOutputs.push(output.value);
 				}
 			}
 		}.bind(this);
@@ -224,7 +231,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		var sendMidiNote = function (instrumentIndex) {
 			
 			var note = this.options.midiNotes[instrumentIndex];
-			var midiOutput = this.midiOutput;
+			var midiOutput = this.midiOutputs[this.selectedMidiOutput];
 			// Let set a latency on the midi. Can be usefull if playing audio and sending midi together.
 			setTimeout(function(){
 				var noteOnMessage = [0x90, note, 0x7f];    // note on, middle C, full velocity
@@ -237,59 +244,106 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		// Initialize the visual
 		var initVisual = function(){
 			
-			var sequencer = document.createElement("DIV");
-			sequencer.className = "sequencer";
+			// The main container
+			this.sequencerContainer = document.createElement("DIV");
+			this.sequencerContainer.className = "da-beat-sequencer";
+			document.body.appendChild(this.sequencerContainer); 
 			
+			// The controls inputs
 			if(this.options.showControls){
-				
-				var controlsWrapper = document.createElement("DIV");
-				controlsWrapper.className = "bpm-control-wrapper";
-			
-				var playControl = document.createElement("BUTTON");
-				playControl.className = "play";
-				playControl.innerHTML = "Play";
-				
-				var pauseControl = document.createElement("BUTTON");
-				pauseControl.className = "pause";
-				pauseControl.innerHTML = "Pause";
-				
-				var stopControl = document.createElement("BUTTON");
-				stopControl.className = "stop";
-				stopControl.innerHTML = "Stop";
-				
-				var bpmControl = document.createElement("INPUT");
-				bpmControl.setAttribute("type", "number");
-				bpmControl.setAttribute("value", this.options.bpm);
-				
-				controlsWrapper.appendChild(playControl); 
-				controlsWrapper.appendChild(pauseControl); 
-				controlsWrapper.appendChild(stopControl); 
-				controlsWrapper.appendChild(bpmControl); 
-				
-				if(this.options.playSound && this.options.sendMidi){
-					var audioLatencyControl = document.createElement("INPUT");
-					audioLatencyControl.setAttribute("type", "number");
-					audioLatencyControl.setAttribute("value", this.options.audioLatency);
-					controlsWrapper.appendChild(audioLatencyControl); 
-					
-					var midiLatencyControl = document.createElement("INPUT");
-					midiLatencyControl.setAttribute("type", "number");
-					midiLatencyControl.setAttribute("value", this.options.midiLatency);
-					controlsWrapper.appendChild(midiLatencyControl); 
-				}
-				
-				sequencer.appendChild(controlsWrapper); 
-				
-				this.playControl = playControl;
-				this.pauseControl = pauseControl;
-				this.stopControl = stopControl;
-				this.bpmControl = bpmControl;
-				this.audioLatencyControl = audioLatencyControl;
-				this.midiLatencyControl = midiLatencyControl;
+				initControls();
 			}
 			
-			var grid = document.createElement("DIV");
-			grid.className = "grid";
+			// The grid
+			initGrid();
+		}.bind(this);
+		
+		// Initialize the controls
+		// TODO : Ajouter un label sur chaque input
+		var initControls = function(){
+			this.controlsWrapper = document.createElement("DIV");
+			this.controlsWrapper.className = "bpm-control-wrapper";
+		
+			this.playControl = document.createElement("BUTTON");
+			this.playControl.className = "play";
+			this.playControl.innerHTML = "Play";
+			this.controlsWrapper.appendChild(this.playControl); 
+			
+			this.pauseControl = document.createElement("BUTTON");
+			this.pauseControl.className = "pause";
+			this.pauseControl.innerHTML = "Pause";
+			this.controlsWrapper.appendChild(this.pauseControl); 
+			
+			this.stopControl = document.createElement("BUTTON");
+			this.stopControl.className = "stop";
+			this.stopControl.innerHTML = "Stop";
+			this.controlsWrapper.appendChild(this.stopControl);
+			
+			// BPM input with label
+			labelBpm = document.createElement("LABEL");
+			labelBpm.innerHTML = "BPM";
+			this.controlsWrapper.appendChild(labelBpm); 
+			
+			this.bpmControl = document.createElement("INPUT");
+			this.bpmControl.setAttribute("type", "number");
+			this.bpmControl.setAttribute("value", this.options.bpm);
+			labelBpm.appendChild(this.bpmControl); 
+			
+			if(this.options.playSound && this.options.sendMidi){
+				
+				// Audio latency input with label
+				labelAudioLatency = document.createElement("LABEL");
+				labelAudioLatency.innerHTML = "Audio latency";
+				this.controlsWrapper.appendChild(labelAudioLatency); 
+				
+				this.audioLatencyControl = document.createElement("INPUT");
+				this.audioLatencyControl.setAttribute("type", "number");
+				this.audioLatencyControl.setAttribute("value", this.options.audioLatency);
+				labelAudioLatency.appendChild(this.audioLatencyControl); 
+				
+				// Midi latency input with label
+				labelMidiLatency = document.createElement("LABEL");
+				labelMidiLatency.innerHTML = "Midi latency";
+				this.controlsWrapper.appendChild(labelMidiLatency); 
+				
+				this.midiLatencyControl = document.createElement("INPUT");
+				this.midiLatencyControl.setAttribute("type", "number");
+				this.midiLatencyControl.setAttribute("value", this.options.midiLatency);
+				labelMidiLatency.appendChild(this.midiLatencyControl); 
+			}
+			
+			this.sequencerContainer.appendChild(this.controlsWrapper); 
+		}.bind(this);
+			
+		// Initialize the midi output selector
+		var initMidiOutputControl = function(){
+			if(this.midiOutputs && this.midiOutputs.length>0){
+				
+				// Midi output selector with label
+				labelMidiOutput = document.createElement("LABEL");
+				labelMidiOutput.innerHTML = "Midi output";
+				this.controlsWrapper.appendChild(labelMidiOutput); 
+				
+				this.midiOutControl = document.createElement("SELECT");
+				
+				for(var i=0; i<this.midiOutputs.length; i++){
+				    var option = document.createElement("OPTION");
+				    option.value = this.midiOutputs[i].id;
+				    option.text = this.midiOutputs[i].name;
+				    this.midiOutControl.appendChild(option);
+				}
+				labelMidiOutput.appendChild(this.midiOutControl);
+				this.midiOutControl.addEventListener('change', function(){this.selectedMidiOutput = this.midiOutControl.selectedIndex;}.bind(this));
+			}
+		}.bind(this);
+		
+		
+		// Initialize the grid
+		// TODO : Ajouter un input pour la note midi de chaque instrument
+		// TODO : ajouter la possibilité de cliquer sur chaque case pour l'activer / désactiver
+		var initGrid = function(){
+			this.gridElement = document.createElement("DIV");
+			this.gridElement.className = "grid";
 				
 			for(var i = 0; i<this.options.steps.length; i++){
 				
@@ -310,20 +364,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 					
 					//block.addEventListener('click', this.close.bind(this)); 
 				}
-				grid.appendChild(line); 
+				this.gridElement.appendChild(line); 
 			}
 			
-			sequencer.appendChild(grid); 
-				
-			
-			
-			document.body.appendChild(sequencer); 
-			
-			this.element = sequencer;
-			this.gridElement = grid;
+			this.sequencerContainer.appendChild(this.gridElement); 
 		}.bind(this);
-		
-		
+
 		// Refresh the visual
 		var updateVisual = function(currentStep){
 			if(this.gridElement){

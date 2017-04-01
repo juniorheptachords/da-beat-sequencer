@@ -1,7 +1,7 @@
-.sequencer{
+.da-beat-sequencer{
 	font-family: monospace;
 }
-.instrument .step{
+.da-beat-sequencer .instrument .step{
     display: inline-block;
     vertical-align: middle;
     width: 6.25%;
@@ -13,7 +13,14 @@
     padding-bottom: 3.12%;
     line-height: 0;
 }
-.instrument .step.active{
+.da-beat-sequencer .instrument .step.active{
 	background: black;
 	color: white;
+}
+.da-beat-sequencer .bpm-control-wrapper label{
+	display: inline-block;
+}
+.da-beat-sequencer .bpm-control-wrapper label input,
+.da-beat-sequencer .bpm-control-wrapper label select{
+	display: block;
 }
