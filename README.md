@@ -60,12 +60,13 @@ __Default: 110__
 	
 ### steps
 2D array representing the steps.
-__Default: __
+__Default:__
 ```javascript
 [[1,1,0,1,0,0,1,1,0,1,1,0,0,0,0,0],
 [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
 [1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,1],
-[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]]```
+[0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]]
+```
 
 ### midiNotes
 Array of midi notes used when sending midi. The order in the array is related to the array of steps.
