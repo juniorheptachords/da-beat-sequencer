@@ -1,7 +1,12 @@
 .da-beat-sequencer{
 	font-family: monospace;
 }
-.da-beat-sequencer .instrument .step{
+.da-beat-sequencer .instrument .steps{
+	display: inline-block;
+	vertical-align: middle;
+	width: 80%;
+}
+.da-beat-sequencer .instrument .steps .step{
     display: inline-block;
     vertical-align: middle;
     width: 6.25%;
@@ -13,13 +18,27 @@
     padding-bottom: 3.12%;
     line-height: 0;
 }
-.da-beat-sequencer .instrument .step.active{
+.da-beat-sequencer .instrument .steps .step.active{
 	background: black;
 	color: white;
+}
+.da-beat-sequencer .instrument .steps .step input{
+	display: none;
+}
+.da-beat-sequencer .instrument .steps .step input + div::before{
+	content: '.';
+	cursor: pointer;
+}
+.da-beat-sequencer .instrument .steps .step input:checked + div::before{
+	content: 'x';
+}
+.da-beat-sequencer .bpm-control-wrapper button{
+	margin-right: 1em;
 }
 .da-beat-sequencer .bpm-control-wrapper label{
 	display: inline-block;
     vertical-align: bottom;
+    margin-right: 1em;
 }
 .da-beat-sequencer .bpm-control-wrapper label input,
 .da-beat-sequencer .bpm-control-wrapper label select{
@@ -33,9 +52,4 @@
 .da-beat-sequencer .instrument label input{
 	display: block;
 	width: 100%;
-}
-.da-beat-sequencer .instrument .steps{
-	display: inline-block;
-	vertical-align: middle;
-	width: 80%;
 }

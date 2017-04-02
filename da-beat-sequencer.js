@@ -7,7 +7,7 @@
 ██████╔╝██║  ██║    ██████╔╝███████╗██║  ██║   ██║       ███████║███████╗╚██████╔╝╚██████╔╝███████╗██║ ╚████║╚██████╗███████╗██║  ██║
 ╚═════╝ ╚═╝  ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝
                                                                                                                                      
-version : 0.5
+version : 0.6
 Release date : 2017-04-01
 
 MIT License
@@ -437,13 +437,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 				for(var s = 0; s<this.options.steps[i].length; s++){
 					var block = document.createElement("DIV");
 					block.className = "step";
-					var t = null;
+					
+					labelStep = document.createElement("LABEL");
+					block.appendChild(labelStep); 
+					
+					stepInput = document.createElement("INPUT");
+					stepInput.setAttribute("type", "checkbox");
+					labelStep.appendChild(stepInput); 
+					
+					(function(i, s, stepInput) {
+						stepInput.addEventListener('change', function(){ self.options.steps[i][s] = (stepInput.checked?1:0);}.bind(self));
+					})(i, s, stepInput);
+					
+					stepInputSign = document.createElement("DIV");
+					labelStep.appendChild(stepInputSign); 
+					
 					if(this.options.steps[i][s]){
-						t = document.createTextNode("x");
-					}else{
-						t = document.createTextNode(".");
+						stepInput.setAttribute("checked", "checked");
 					}
-					block.appendChild(t);
+					
 					steps.appendChild(block);  
 					
 					//block.addEventListener('click', this.close.bind(this)); 
@@ -469,10 +481,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 						stepElement.classList.remove("active");
 						
 						// Maybe the steps have changed so we rewrite each to be sure
+						var stepInput = stepElement.getElementsByTagName("LABEL")[0].getElementsByTagName("INPUT")[0];
+				
 						if(this.options.steps[i][s]){
-							stepElement.innerHTML = "x";
+							stepInput.setAttribute("checked", "checked");
 						}else{
-							stepElement.innerHTML = ".";
+							stepInput.removeAttribute("checked");
 						}
 					}
 				}
