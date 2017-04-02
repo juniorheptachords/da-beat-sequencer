@@ -7,8 +7,8 @@
 ██████╔╝██║  ██║    ██████╔╝███████╗██║  ██║   ██║       ███████║███████╗╚██████╔╝╚██████╔╝███████╗██║ ╚████║╚██████╗███████╗██║  ██║
 ╚═════╝ ╚═╝  ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝
                                                                                                                                      
-version : 0.4
-Release date : 2017-03-31
+version : 0.5
+Release date : 2017-04-01
 
 MIT License
 
@@ -50,17 +50,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 			midiLatency:0,
 			bars: 1,
 			stepsInBar: 16,
-			bpm: 110,
+			bpm: 90,
 			steps: [[1,1,0,1,0,0,1,1,0,1,1,0,0,0,0,0],
 					 [0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0],
 					 [1,0,1,1,1,0,1,0,1,0,1,0,1,0,1,1],
 					 [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0]
 					],
-			midiNotes:[36, 38, 42, 43]
+			midiNotes:[36, 38, 42, 43],
+			midiClockMode: "standalone"
 		}
 		
 		this.midi = null;
 		this.options = defaults;
+		this.midiInputs = new Array();
 		this.midiOutputs = new Array();
 		this.selectedMidiOutput = 0;
 		
@@ -75,12 +77,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		
 		// Init the metronome with this.options
 		metronome.postMessage( JSON.stringify({action:"init", message: this.options}) );
-		
+
 		// Metronome events
 		metronome.onmessage = function(e) {
-			if(e.data["step"] != undefined){
-				
+			
+			if(e.data == "clock" && this.options.midiClockMode=="master"){
+				sendMidiClock();
+			}
+			else if(e.data["step"] != undefined){
 				var currentStep = e.data["step"];
+				if(currentStep==0){
+					
+					sendMidiStart();
+				}
 				
 				for(var i = 0; i<this.options.steps.length; i++){
 					if(this.options.steps[i][currentStep] == 1){
@@ -192,11 +201,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		}.bind(this);
 		
 		// Init MIDI
-		// TODO : ajouter le mode esclave et le mode maitre du tempo
 		var initMidi = function () {
 			if (navigator.requestMIDIAccess) {
-			    navigator.requestMIDIAccess()
-			        .then(function(midiAccess){onMIDISuccess(midiAccess);}, onMIDIFailure);
+			    navigator.requestMIDIAccess().then(
+			    	function(midiAccess){
+					    onMIDISuccess(midiAccess);
+					}, 
+					onMIDIFailure
+					);
 			}
 		}.bind(this);
 		
@@ -205,7 +217,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 			console.log( "MIDI ready!" );
 			this.midi = midiAccess;  // store in the global (in real usage, would probably keep in an object instance)
 			
-			listInputsAndOutputs( midiAccess );
+			listMidiInAndOut( midiAccess );
 			
 			//Initialize the Midi output selector
 			initMidiOutputControl();	
@@ -217,30 +229,56 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		}
 		
 		// Setting MIDI output
-		var listInputsAndOutputs = function( midiAccess ) {
+		var listMidiInAndOut = function( midiAccess ) {
 			if(midiAccess){
 				var outputs = this.midi.outputs.values();
 				for (var output = outputs.next(); output && !output.done; output = outputs.next()) {
 				    // each time there is a midi message call the onMIDIMessage function
 				    this.midiOutputs.push(output.value);
 				}
+				
+				// TODO : Will come soon
+				//var inputs = this.midi.inputs.values();
+				//for (var input = inputs.next(); input && !input.done; input = inputs.next()) {
+				    // each time there is a midi message call the onMIDIMessage function
+				    //this.midiInputs.push(input.value);
+				//}
 			}
 		}.bind(this);
+		
 		
 		// Send MIDI note
 		var sendMidiNote = function (instrumentIndex) {
 			
 			var note = this.options.midiNotes[instrumentIndex];
 			var midiOutput = this.midiOutputs[this.selectedMidiOutput];
-			// Let set a latency on the midi. Can be usefull if playing audio and sending midi together.
-			setTimeout(function(){
-				var noteOnMessage = [0x90, note, 0x7f];    // note on, middle C, full velocity
-				midiOutput.send( noteOnMessage );  //omitting the timestamp means send immediately.
-				midiOutput.send( [0x80, note, 0x40], window.performance.now() + 100.0 ); // note off, release velocity = 64, timestamp = now + 100ms.                                                      
-			}, this.options.midiLatency);
+			if(midiOutput){
+				// Let set a latency on the midi. Can be usefull if playing audio and sending midi together.
+				setTimeout(function(){
+					var noteOnMessage = [0x90, note, 0x7f];    // note on, middle C, full velocity
+					midiOutput.send( noteOnMessage );  //omitting the timestamp means send immediately.
+					midiOutput.send( [0x80, note, 0x40], window.performance.now() + 10.0 ); // note off, release velocity = 64, timestamp = now + 100ms.                                                      
+				}, this.options.midiLatency);
+			}
 		}.bind(this);
 		
+		var sendMidiClock = function(){
+			midiOutput = this.midiOutputs[this.selectedMidiOutput];
+			if(midiOutput){
+				midiOutput.send( [0xF8] );
+			}
+			//midiOutput.send( [0xF8] );
+		}.bind(this);
 		
+		var sendMidiStart = function(clockPosition){
+			midiOutput = this.midiOutputs[this.selectedMidiOutput];
+			if(midiOutput){
+				midiOutput.send( [0xF2, 0x00, 0x00] );
+				midiOutput.send( [0xFB] );
+				console.log("start");
+			}
+		}.bind(this);
+	
 		// Initialize the visual
 		var initVisual = function(){
 			
@@ -287,6 +325,32 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 			this.bpmControl.setAttribute("type", "number");
 			this.bpmControl.setAttribute("value", this.options.bpm);
 			labelBpm.appendChild(this.bpmControl); 
+			
+			
+			// Midi clock input with label
+			if(this.options.sendMidi){
+				labelMidiClockMode = document.createElement("LABEL");
+				labelMidiClockMode.innerHTML = "Midi clock mode";
+				this.controlsWrapper.appendChild(labelMidiClockMode); 
+				
+				this.midiClockModeControl = document.createElement("SELECT");
+				
+				option = document.createElement("OPTION");
+			    option.value = "standalone";
+			    option.text = "Standalone";
+			    this.midiClockModeControl.appendChild(option);
+			    option = document.createElement("OPTION");
+			    option.value = "master";
+			    option.text = "Master";
+			    this.midiClockModeControl.appendChild(option);
+			    // TODO: Will comme soon
+			    /*option = document.createElement("OPTION");
+			    option.value = "slave";
+			    option.text = "Slave";
+			    this.midiClockModeControl.appendChild(option);*/
+			    
+				labelMidiClockMode.appendChild(this.midiClockModeControl); 
+			}
 			
 			if(this.options.playSound && this.options.sendMidi){
 				
@@ -441,6 +505,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		    if (this.bpmControl) {
 		      this.bpmControl.addEventListener('change', function(){this.setBpm(this.bpmControl.value)}.bind(this));
 		    }
+		    if (this.midiClockModeControl) {
+		      this.midiClockModeControl.addEventListener('change', function(){this.options.midiClockMode = this.midiClockModeControl.value}.bind(this));
+		    }
 		    if (this.audioLatencyControl) {
 		      this.audioLatencyControl.addEventListener('change', function(){this.options.audioLatency = this.audioLatencyControl.value;}.bind(this));
 		    }
@@ -478,15 +545,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 
 		function(){
 			var timer=null;
+			var clock=null;
 	
 			var bpm = 100;
 			var interval=1000*60/bpm;
 			var interval_2=interval/2;
 			var interval_4=interval/4;
+			var interval_clock=interval/23.8;
 			
 			var stepsInBar = 16;
 			var bars = 1;
-			
 			var currentStep = 0;
 			
 			self.onmessage=function(e){
@@ -506,9 +574,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 								stepsInBar = data.message.stepsInBar;
 							}
 							// Calculate the interval
-							interval=1000*60/bpm;
+							interval=(1000*60/bpm).toFixed(20);
 							interval_2=interval/2;
 							interval_4=interval/4;
+							interval_clock = interval/23.8;
 							
 							// Auto playing
 							if(data.message.autoplay){
@@ -524,13 +593,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 							// Stop playing
 							console.log("Pausing");
 							clearInterval(timer);
-							timer=null;
+							timer=null;					
+							clearInterval(clock);
+							clock=null;
 						break;
 					    case "stop":
 							// Stop playing
 							console.log("Stopping");
 							clearInterval(timer);
-							timer=null;
+							timer=null;							
+							clearInterval(clock);
+							clock=null;
 							currentStep = 0;
 						break;
 						
@@ -539,6 +612,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 							console.log("Set BPM");
 							bpm = data.bpm
 							
+							if(clock){
+								clearInterval(clock);
+								clock=null;
+							}
 							if(timer){
 								clearInterval(timer);
 								timer=null;
@@ -547,6 +624,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 								interval=1000*60/bpm;
 								interval_2=interval/2;
 								interval_4=interval/4;
+								interval_clock = interval/23.8;
 								play();
 							}
 						break;
@@ -565,6 +643,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 						,interval_4);
 					}else{
 						console.log("Already playing!");
+					}
+					
+					if(!clock){
+						clock = setInterval(  
+							function(){
+								postMessage("clock");
+								
+							}
+						,interval_clock);
 					}
 				}
 			};

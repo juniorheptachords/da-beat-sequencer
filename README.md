@@ -59,7 +59,7 @@ The bpm obviously.
 __Default: 110__
 	
 ### steps
-2D array representing the steps.
+2D array representing the steps.  
 __Default:__
 ```javascript
 [[1,1,0,1,0,0,1,1,0,1,1,0,0,0,0,0],
