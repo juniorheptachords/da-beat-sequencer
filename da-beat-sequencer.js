@@ -7,7 +7,7 @@
 ██████╔╝██║  ██║    ██████╔╝███████╗██║  ██║   ██║       ███████║███████╗╚██████╔╝╚██████╔╝███████╗██║ ╚████║╚██████╗███████╗██║  ██║
 ╚═════╝ ╚═╝  ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝
                                                                                                                                      
-version : 0.6
+version : 0.7
 Release date : 2017-04-01
 
 MIT License
@@ -64,6 +64,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		this.options = defaults;
 		this.midiInputs = new Array();
 		this.midiOutputs = new Array();
+		this.selectedMidiInput = 0;
 		this.selectedMidiOutput = 0;
 		
 		// Create this.options by extending defaults with the passed in arugments
@@ -80,15 +81,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 
 		// Metronome events
 		metronome.onmessage = function(e) {
-			
+			//TODO standardise the data inside e.data, and make a switch case instead
 			if(e.data == "clock" && this.options.midiClockMode=="master"){
 				sendMidiClock();
 			}
+			else if(e.data["setBpm"] != undefined){
+				this.bpmControl.value = e.data["setBpm"].toFixed(2);
+				this.options.bpm = e.data["setBpm"];
+			}
 			else if(e.data["step"] != undefined){
 				var currentStep = e.data["step"];
-				if(currentStep==0){
-					
-					sendMidiStart();
+				
+				if( this.options.midiClockMode=="master"){
+					if(currentStep==0){
+						sendMidiStart();
+					}
 				}
 				
 				for(var i = 0; i<this.options.steps.length; i++){
@@ -127,9 +134,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		this.setBpm = function(bpm) {
 			metronome.postMessage( JSON.stringify({action:"setBpm", bpm:bpm}) );
 		}
-		// Change BPM
+		// Change the steps
 		this.setSteps = function(steps) {
 			this.options.steps = steps;
+			
+		}
+		this.setCursorPosition = function(position) {
+			metronome.postMessage( JSON.stringify({action:"setCursorPosition", position:position}) );
 			
 		}
 		
@@ -228,24 +239,48 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 			console.log( "Failed to get MIDI access - " + msg );
 		}
 		
-		// Setting MIDI output
+		// Setting MIDI Input and Output
 		var listMidiInAndOut = function( midiAccess ) {
 			if(midiAccess){
 				var outputs = this.midi.outputs.values();
 				for (var output = outputs.next(); output && !output.done; output = outputs.next()) {
-				    // each time there is a midi message call the onMIDIMessage function
 				    this.midiOutputs.push(output.value);
 				}
 				
-				// TODO : Will come soon
-				//var inputs = this.midi.inputs.values();
-				//for (var input = inputs.next(); input && !input.done; input = inputs.next()) {
-				    // each time there is a midi message call the onMIDIMessage function
-				    //this.midiInputs.push(input.value);
-				//}
+				var inputs = this.midi.inputs.values();
+				for (var input = inputs.next(); input && !input.done; input = inputs.next()) {
+				    this.midiInputs.push(input.value);
+				}
+				this.midiInputs[this.selectedMidiInput].onmidimessage = this.onMIDIMessage;
 			}
 		}.bind(this);
 		
+		// Called when receiving any midi message
+		this.onMIDIMessage = function(event){
+			if(this.options.midiClockMode == "slave"){
+				var timestamp = event.timestamp;
+				var data = event.data;
+				console.log(data);
+				switch(data[0]) {
+					// Receive a midi Clock signal
+				    case 0xF8:
+						metronome.postMessage( JSON.stringify({action:"clock"}) );
+					break;
+					// Receive a midi Play signal
+				    case 0xFB:
+						this.play();
+					break;
+					// Receive a midi Stop signal
+				    case 0xFC:
+						this.stop();
+					break;
+					// Receive a midi sursor position signal
+				    case 0xF2:
+						this.setCursorPosition(0);
+					break;
+				}
+			}
+		}.bind(this);
 		
 		// Send MIDI note
 		var sendMidiNote = function (instrumentIndex) {
@@ -275,7 +310,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 			if(midiOutput){
 				midiOutput.send( [0xF2, 0x00, 0x00] );
 				midiOutput.send( [0xFB] );
-				console.log("start");
 			}
 		}.bind(this);
 	
@@ -344,10 +378,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 			    option.text = "Master";
 			    this.midiClockModeControl.appendChild(option);
 			    // TODO: Will comme soon
-			    /*option = document.createElement("OPTION");
+			    option = document.createElement("OPTION");
 			    option.value = "slave";
 			    option.text = "Slave";
-			    this.midiClockModeControl.appendChild(option);*/
+			    this.midiClockModeControl.appendChild(option);
 			    
 				labelMidiClockMode.appendChild(this.midiClockModeControl); 
 			}
@@ -402,7 +436,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		
 		
 		// Initialize the grid
-		// TODO : ajouter la possibilité de cliquer sur chaque case pour l'activer / désactiver
 		var initGrid = function(){
 			var self = this;
 			this.gridElement = document.createElement("DIV");
@@ -560,12 +593,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 		function(){
 			var timer=null;
 			var clock=null;
-	
-			var bpm = 100;
-			var interval=1000*60/bpm;
-			var interval_2=interval/2;
-			var interval_4=interval/4;
-			var interval_clock=interval/23.8;
+			var previousClockTime = null;
+			var averageClockInterval = 0;
+			var clockIntervalCount = 0;
 			
 			var stepsInBar = 16;
 			var bars = 1;
@@ -606,67 +636,114 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 					    case "pause":
 							// Stop playing
 							console.log("Pausing");
-							clearInterval(timer);
-							timer=null;					
-							clearInterval(clock);
-							clock=null;
+							pause();
 						break;
 					    case "stop":
 							// Stop playing
 							console.log("Stopping");
-							clearInterval(timer);
-							timer=null;							
-							clearInterval(clock);
-							clock=null;
-							currentStep = 0;
+							stop();
 						break;
-						
 					    case "setBpm":
 							// Stop playing
 							console.log("Set BPM");
 							bpm = data.bpm
 							
 							if(clock){
-								clearInterval(clock);
+								clearTimeout(clock);
 								clock=null;
 							}
 							if(timer){
-								clearInterval(timer);
+								clearTimeout(timer);
 								timer=null;
 								
-								// Calculate the interval
-								interval=1000*60/bpm;
-								interval_2=interval/2;
-								interval_4=interval/4;
-								interval_clock = interval/23.8;
 								play();
+							}
+						break;
+						case "setCursorPosition":
+							position=data.position;
+							currentStep = position;
+						break;
+						case "clock":
+							var currentTime = new Date().getTime();
+							if(previousClockTime!=null){
+								clockIntervalCount++;
+								averageClockInterval = averageClockInterval + (currentTime - previousClockTime);
+								
+								if(clockIntervalCount==6){
+									averageClockInterval = averageClockInterval/6;
+									bpm = (1000000 / (averageClockInterval*1000) / 24) * 60;
+									averageClockInterval = 0;
+								}
+								
+								clockIntervalCount = clockIntervalCount%6;
+								
+								
+							}
+							previousClockTime = currentTime;
+							
+							if(currentStep==6){
+								calculateInterval();
+								postMessage({"setBpm":bpm});
 							}
 						break;
 			        }
 				}
 				
+				function calculateInterval(){
+					// Calculate the interval
+					interval=1000*60/bpm;
+					interval_2=interval/2;
+					interval_4=interval/4;
+					interval_clock = interval/23.8;
+				}
 				function play(){
+					calculateInterval();
 					if(!timer){
-						timer = setInterval(  
+						updateTimer();
+						/*timer = setInterval(  
 							function(){
 								postMessage({"step":currentStep});
 								
 								currentStep++;
 								currentStep = currentStep % stepsInBar;
 							}
-						,interval_4);
+						,interval_4);*/
 					}else{
 						console.log("Already playing!");
 					}
 					
 					if(!clock){
-						clock = setInterval(  
-							function(){
-								postMessage("clock");
-								
-							}
-						,interval_clock);
+						updateClock();
 					}
+				}
+				function updateTimer(){
+							
+					postMessage({"step":currentStep});
+						
+					currentStep++;
+					currentStep = currentStep % stepsInBar;
+									
+					clearTimeout(timer);
+					timer = setTimeout(updateTimer, interval_4);
+					
+				};
+				function updateClock(){
+					postMessage("clock");				
+					clearTimeout(clock);
+					clock = setTimeout(updateClock, interval_clock);
+				};
+				function stop(){
+					clearTimeout(timer);
+					timer=null;							
+					clearTimeout(clock);
+					clock=null;
+					currentStep = 0;
+				}
+				function pause(){
+					clearTimeout(timer);
+					timer=null;					
+					clearTimeout(clock);
+					clock=null;
 				}
 			};
 		}.toString(),
