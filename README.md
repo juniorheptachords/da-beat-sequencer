@@ -75,6 +75,10 @@ __Default:__
  [36, 38, 42, 43]
 ```
 
+### midiClockMode
+Set the midi clock mode to sync the sequencer with other devices.  
+__Possible values: "standalone", "master", "slave"__  
+__Default: "standalone"__
 
 ## To do
 - Make it work on all browser!
