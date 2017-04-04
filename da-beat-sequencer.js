@@ -7,8 +7,8 @@
 ██████╔╝██║  ██║    ██████╔╝███████╗██║  ██║   ██║       ███████║███████╗╚██████╔╝╚██████╔╝███████╗██║ ╚████║╚██████╗███████╗██║  ██║
 ╚═════╝ ╚═╝  ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝
                                                                                                                                      
-version : 0.7
-Release date : 2017-04-01
+version : 0.8
+Release date : 2017-04-03
 
 MIT License
 
@@ -260,7 +260,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 			if(this.options.midiClockMode == "slave"){
 				var timestamp = event.timestamp;
 				var data = event.data;
-				console.log(data);
 				switch(data[0]) {
 					// Receive a midi Clock signal
 				    case 0xF8:
@@ -276,7 +275,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 					break;
 					// Receive a midi sursor position signal
 				    case 0xF2:
-						this.setCursorPosition(0);
+				    	if(data[1]){
+							this.setCursorPosition(data[1]);
+				    	}
 					break;
 				}
 			}
@@ -621,7 +622,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 							interval=(1000*60/bpm).toFixed(20);
 							interval_2=interval/2;
 							interval_4=interval/4;
-							interval_clock = interval/23.8;
+							interval_clock = interval/24;
 							
 							// Auto playing
 							if(data.message.autoplay){
@@ -660,8 +661,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 							}
 						break;
 						case "setCursorPosition":
-							position=data.position;
-							currentStep = position;
+							position=data.position+1;
+							currentStep = position%stepsInBar;
 						break;
 						case "clock":
 							var currentTime = new Date().getTime();
@@ -700,14 +701,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 					calculateInterval();
 					if(!timer){
 						updateTimer();
-						/*timer = setInterval(  
-							function(){
-								postMessage({"step":currentStep});
-								
-								currentStep++;
-								currentStep = currentStep % stepsInBar;
-							}
-						,interval_4);*/
 					}else{
 						console.log("Already playing!");
 					}
