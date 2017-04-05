@@ -1,7 +1,7 @@
 # Da Beat Sequencer
 Easy to use Audio / Midi beat sequencer.
 
-Still in development, tested in Chrome and Safari, planned to be working on all browsers.
+Still a work in progress, tested in Chrome and Safari, planned to be working on all browsers.
 
 ## How to use
 Include the 2 files da-beat-sequecer.js and da-beat-sequencer.css and instantiate the sequencer like this:
@@ -82,6 +82,7 @@ __Default: "standalone"__
 
 ## To do
 - Make it work on all browser!
+- Still improve the midi clock sync
 - Allow more bars to be defined
 - Allow more flexibility on customization/override 
 - Make some more css

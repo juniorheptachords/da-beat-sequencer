@@ -663,7 +663,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 							currentStep = position%stepsInBar;
 						break;
 						case "clock":
-							var currentTime = new Date().getTime();
+							var currentTime = self.performance.now();
 							if(previousClockTime!=null){
 								clockIntervalCount++;
 								averageClockInterval = averageClockInterval + (currentTime - previousClockTime);
