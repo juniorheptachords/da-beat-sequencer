@@ -7,8 +7,8 @@
 ██████╔╝██║  ██║    ██████╔╝███████╗██║  ██║   ██║       ███████║███████╗╚██████╔╝╚██████╔╝███████╗██║ ╚████║╚██████╗███████╗██║  ██║
 ╚═════╝ ╚═╝  ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝
                                                                                                                                      
-version : 0.8
-Release date : 2017-04-03
+version : 0.9
+Release date : 2017-04-04
 
 MIT License
 
@@ -361,31 +361,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 			this.bpmControl.setAttribute("value", this.options.bpm);
 			labelBpm.appendChild(this.bpmControl); 
 			
-			
 			// Midi clock input with label
-			if(this.options.sendMidi){
-				labelMidiClockMode = document.createElement("LABEL");
-				labelMidiClockMode.innerHTML = "Midi clock mode";
-				this.controlsWrapper.appendChild(labelMidiClockMode); 
-				
-				this.midiClockModeControl = document.createElement("SELECT");
-				
-				option = document.createElement("OPTION");
-			    option.value = "standalone";
-			    option.text = "Standalone";
-			    this.midiClockModeControl.appendChild(option);
-			    option = document.createElement("OPTION");
-			    option.value = "master";
-			    option.text = "Master";
-			    this.midiClockModeControl.appendChild(option);
-			    // TODO: Will comme soon
-			    option = document.createElement("OPTION");
-			    option.value = "slave";
-			    option.text = "Slave";
-			    this.midiClockModeControl.appendChild(option);
-			    
-				labelMidiClockMode.appendChild(this.midiClockModeControl); 
-			}
+			labelMidiClockMode = document.createElement("LABEL");
+			labelMidiClockMode.innerHTML = "Midi clock mode";
+			this.controlsWrapper.appendChild(labelMidiClockMode); 
+			
+			this.midiClockModeControl = document.createElement("SELECT");
+			
+			option = document.createElement("OPTION");
+		    option.value = "standalone";
+		    option.text = "Standalone";
+		    this.midiClockModeControl.appendChild(option);
+		    option = document.createElement("OPTION");
+		    option.value = "master";
+		    option.text = "Master";
+		    this.midiClockModeControl.appendChild(option);
+		    option = document.createElement("OPTION");
+		    option.value = "slave";
+		    option.text = "Slave";
+		    this.midiClockModeControl.appendChild(option);
+			
+			labelMidiClockMode.appendChild(this.midiClockModeControl); 
 			
 			if(this.options.playSound && this.options.sendMidi){
 				
@@ -567,16 +563,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 				
 		// Init of the plugin
 		this.init = function(){
+			// Initialize audio
 			initAudio();
 			
-			if(this.options.sendMidi){
-				initMidi();
-			}
+			// Initialize Midi
+			initMidi();
 			
+			// Create the visual
 			if(this.options.showVisual){
 				initVisual();
 			}
 			
+			//Initialize the events
 			initializeEvents();
 		}
 		
