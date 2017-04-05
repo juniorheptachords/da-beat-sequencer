@@ -7,7 +7,7 @@
 ██████╔╝██║  ██║    ██████╔╝███████╗██║  ██║   ██║       ███████║███████╗╚██████╔╝╚██████╔╝███████╗██║ ╚████║╚██████╗███████╗██║  ██║
 ╚═════╝ ╚═╝  ╚═╝    ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝╚══════╝ ╚══▀▀═╝  ╚═════╝ ╚══════╝╚═╝  ╚═══╝ ╚═════╝╚══════╝╚═╝  ╚═╝
                                                                                                                                      
-version : 0.9
+version : 0.9.1
 Release date : 2017-04-04
 
 MIT License
@@ -668,13 +668,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 								clockIntervalCount++;
 								averageClockInterval = averageClockInterval + (currentTime - previousClockTime);
 								
-								if(clockIntervalCount==6){
-									averageClockInterval = averageClockInterval/6;
+								if(clockIntervalCount==48){
+									averageClockInterval = averageClockInterval/48;
 									bpm = (1000000 / (averageClockInterval*1000) / 24) * 60;
 									averageClockInterval = 0;
 								}
 								
-								clockIntervalCount = clockIntervalCount%6;
+								clockIntervalCount = clockIntervalCount%48;
 								
 								
 							}
